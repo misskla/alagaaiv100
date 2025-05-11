@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "262980409120",
+    "project_id": "alagaaiv100-4a80e",
+    "storage_bucket": "alagaaiv100-4a80e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:262980409120:android:b134c06f2cd24bb1472945",
+        "android_client_info": {
+          "package_name": "com.example.alagaaiv100"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7j46dj30IEMJ2Y-wV7bxs_LUE9lXiIGQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
