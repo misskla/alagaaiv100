@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <!-- Your existing strings -->
+    <string name="accessibility_service_description">AlagaAI Message Monitor</string>
+</resources>

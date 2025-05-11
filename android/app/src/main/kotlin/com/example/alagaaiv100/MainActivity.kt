@@ -1,31 +1,38 @@
 package com.example.alagaaiv100
 
+import android.content.Intent
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.embedding.engine.FlutterEngine
 
-class MainActivity : FlutterActivity() {
-    private val CHANNEL = "alagaaiv100/sms"
-
-    companion object {
-        var flutterChannel: MethodChannel? = null
-    }
+class MainActivity: FlutterActivity() {
+    private val CHANNEL = "alagaaiv100/channel"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        // Create the channel and assign it to the companion object
+        // Initialize the method channel
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
-        flutterChannel = channel
+        methodChannel = channel
 
         channel.setMethodCallHandler { call, result ->
-            // Handle calls from Flutter if needed
+            if (call.method == "startService") {
+                val intent = Intent(this, AccessibilityMonitor::class.java)
+                startService(intent)
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
         }
     }
 
-    // Optional: for background use, ensure this activity stays registered
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    companion object {
+        private var methodChannel: MethodChannel? = null
+
+        @JvmStatic
+        fun sendToFlutter(method: String, arguments: Any?) {
+            methodChannel?.invokeMethod(method, arguments)
+        }
     }
 }
