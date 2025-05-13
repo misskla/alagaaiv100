@@ -6,35 +6,24 @@ import android.content.Intent
 import android.os.Bundle
 import android.telephony.SmsMessage
 import android.util.Log
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.dart.DartExecutor
-import io.flutter.plugin.common.MethodChannel
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class SMSReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val bundle: Bundle? = intent.extras
-        if (bundle != null) {
-            val pdus = bundle.get("pdus") as? Array<*>
-            val format = bundle.getString("format") ?: ""
+        Log.d("SMSReceiver", "✅ onReceive() triggered")
+        val bundle = intent.extras
+        val pdus = bundle?.get("pdus") as? Array<*>
+        val format = bundle?.getString("format") ?: ""
 
-            if (pdus != null) {
-                for (pdu in pdus) {
-                    val sms = SmsMessage.createFromPdu(pdu as ByteArray, format)
-                    val message = sms.displayMessageBody
+        pdus?.forEach { pdu ->
+            val sms = SmsMessage.createFromPdu(pdu as ByteArray, format)
+            val message = sms.displayMessageBody
+            Log.d("SMSReceiver", "📩 SMS: $message")
 
-                    // Optional: Log for debug
-                    Log.d("SMSReceiver", "Received SMS: $message")
-
-                    // Pass message to Flutter via MethodChannel
-                    val engine = FlutterEngine(context)
-                    engine.dartExecutor.executeDartEntrypoint(
-                        DartExecutor.DartEntrypoint.createDefault()
-                    )
-
-                    MethodChannel(engine.dartExecutor.binaryMessenger, "alagaai/sms")
-                        .invokeMethod("incomingSMS", message)
-                }
-            }
+            // Send internal broadcast to Flutter
+            val internalIntent = Intent("SMS_MONITOR_EVENT")
+            internalIntent.putExtra("message", message)
+            LocalBroadcastManager.getInstance(context).sendBroadcast(internalIntent)
         }
     }
 }

@@ -21,8 +21,9 @@ dependencies:
   google_generative_ai: ^0.4.7
   flutter_accessibility_service: ^1.0.0
   drag_ball: ^2.0.1
-  permission_handler: ^11.0.1
   flutter_dotenv: ^5.1.0
+  permission_handler: ^11.0.0
+  flutter_local_notifications: ^17.0.0
 
 dev_dependencies:
   flutter_test:

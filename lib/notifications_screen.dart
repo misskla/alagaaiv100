@@ -5,12 +5,18 @@ import 'dashboard_screen.dart';
 import 'search_professionals_screen.dart';
 import 'chat_screen.dart';
 import 'profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   final UserInfo userInfo;
 
   const NotificationsScreen({super.key, required this.userInfo});
 
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,97 +51,79 @@ class NotificationsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Single Notification Card
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: Image.asset(
-                        'assets/doctor_profile.png',
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.kodchasan(
-                                fontSize: 14,
-                                color: Colors.black,
-                              ),
-                              children: [
-                                const TextSpan(text: "Dr. Josephine Reyes "),
-                                const TextSpan(text: "requested access to "),
-                                TextSpan(
-                                  text: "your appointment details.",
-                                  style: const TextStyle(
-                                    color: Colors.blueAccent,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+              // 🔥 Firestore alert notifications
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('trigger_alerts')
+                      .orderBy('timestamp', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final docs = snapshot.data!.docs;
+
+                    if (docs.isEmpty) {
+                      return const Center(child: Text("No alerts yet."));
+                    }
+
+                    return ListView.builder(
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final data = docs[index].data() as Map<String, dynamic>;
+                        final message = data['message'] ?? '';
+                        final timestamp = data['timestamp']?.toDate();
+
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orangeAccent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: Image.asset(
+                                  'assets/nav_brain.png',
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
                                 ),
-                                child: const Text("Approve"),
                               ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey.shade300,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      message,
+                                      style: GoogleFonts.kodchasan(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      timestamp != null
+                                          ? "Received at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}"
+                                          : "Time unknown",
+                                      style: GoogleFonts.kodchasan(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: const Text("Decline"),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Today at 9:42 AM",
-                            style: GoogleFonts.kodchasan(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ],
@@ -168,76 +156,53 @@ class NotificationsScreen extends StatelessWidget {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => DashboardScreen(userInfo: userInfo),
+                        builder: (_) => DashboardScreen(userInfo: widget.userInfo),
                       ),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_home.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_home.png', width: 60, height: 60),
                 ),
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                SearchProfessionalsScreen(userInfo: userInfo),
+                        builder: (_) => SearchProfessionalsScreen(userInfo: widget.userInfo),
                       ),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_search.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_search.png', width: 60, height: 60),
                 ),
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) => ChatScreen(
-                              title: "Chatbot",
-                              imagePath: 'assets/nav_brain.png',
-                              isAI: true,
-                              userInfo: userInfo,
-                            ),
+                        builder: (_) => ChatScreen(
+                          title: "Chatbot",
+                          imagePath: 'assets/nav_brain.png',
+                          isAI: true,
+                          userInfo: widget.userInfo,
+                        ),
                       ),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_brain.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_brain.png', width: 60, height: 60),
                 ),
                 GestureDetector(
                   onTap: () {}, // current screen
-                  child: Image.asset(
-                    'assets/nav_messages.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_messages.png', width: 60, height: 60),
                 ),
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ProfileScreen(userInfo: userInfo),
+                        builder: (_) => ProfileScreen(userInfo: widget.userInfo),
                       ),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_profile.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_profile.png', width: 60, height: 60),
                 ),
               ],
             ),
