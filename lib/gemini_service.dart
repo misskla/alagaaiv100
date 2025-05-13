@@ -1,22 +1,22 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
-  final model = GenerativeModel(
-    model: 'gemini-pro',
-    apiKey: 'YOUR_API_KEY', // Use .env in production
+  final GenerativeModel _model;
+
+  GeminiService()
+      : _model = GenerativeModel(
+    model: 'gemini-1.5-flash-001',
+    apiKey: 'AIzaSyA_lsB1pueER84f_QuFr4TswqMFoqwBnXE',
   );
 
-  Future<String> analyzeText(String input) async {
-    final content = [Content.text("Is this message grooming-related? '$input'")];
-    final response = await model.generateContent(content);
-    return response.text ?? 'No result';
-  }
-
-  Future<String> suggestResponse(String message) async {
-    final content = [
-      Content.text("Suggest a friendly response to this suspicious message: '$message'")
-    ];
-    final response = await model.generateContent(content);
-    return response.text ?? 'No suggestion';
+  Future<String> sendMessage(String message) async {
+    try {
+      final response = await _model.generateContent([
+        Content.text(message),
+      ]);
+      return response.text ?? 'No response';
+    } catch (e) {
+      return 'Error: $e';
+    }
   }
 }

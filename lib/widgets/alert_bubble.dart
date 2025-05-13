@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AlertBubble extends StatelessWidget {
-  const AlertBubble({super.key});
+  final String warning;
+  final String suggestion;
+
+  const AlertBubble({super.key, required this.warning, required this.suggestion});
 
   @override
   Widget build(BuildContext context) {
@@ -11,9 +14,8 @@ class AlertBubble extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(top: 16, right: 12, left: 4),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start, // ✅ Align tops
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔴 Left: Prompt message bubble
             Container(
               constraints: const BoxConstraints(maxWidth: 220),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -22,29 +24,36 @@ class AlertBubble extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white, width: 3),
               ),
-              child: Text(
-                "Jake, are you okay with this?",
-                style: GoogleFonts.kodchasan(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    warning,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    suggestion,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-
             const SizedBox(width: 12),
-
-            // 🛡️ Right: Logo and Yes/No buttons
             Column(
               children: [
-                CircleAvatar(
-                  radius: 26, // Adjust for logo size
+                const CircleAvatar(
+                  radius: 26,
                   backgroundColor: Colors.white,
-                  child: Image.asset(
-                    'assets/final logo.png',
-                    width: 36,
-                    height: 36,
-                  ),
+                  backgroundImage: AssetImage('assets/final logo.png'),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
@@ -58,10 +67,7 @@ class AlertBubble extends StatelessWidget {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: Text(
-                    "No",
-                    style: GoogleFonts.kodchasan(color: Colors.white),
-                  ),
+                  child: const Text("No", style: TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(height: 6),
                 ElevatedButton(
@@ -75,10 +81,7 @@ class AlertBubble extends StatelessWidget {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: Text(
-                    "Yes",
-                    style: GoogleFonts.kodchasan(color: Colors.black87),
-                  ),
+                  child: const Text("Yes", style: TextStyle(color: Colors.black87)),
                 ),
               ],
             ),

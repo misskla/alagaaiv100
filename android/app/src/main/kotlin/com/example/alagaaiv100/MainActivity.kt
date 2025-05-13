@@ -1,5 +1,7 @@
 package com.example.alagaaiv100
 
+import android.provider.Settings
+import android.net.Uri
 import android.content.Intent
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
@@ -17,13 +19,30 @@ class MainActivity: FlutterActivity() {
         methodChannel = channel
 
         channel.setMethodCallHandler { call, result ->
-            if (call.method == "startService") {
-                val intent = Intent(this, AccessibilityMonitor::class.java)
-                startService(intent)
-                result.success(null)
-            } else {
-                result.notImplemented()
+            when (call.method) {
+                "startService" -> {
+                    val intent = Intent(this, AccessibilityMonitor::class.java)
+                    startService(intent)
+                    result.success(null)
+                }
+                "showBubble" -> {
+                    val intent = Intent(this, FloatingBubbleService::class.java)
+                    startService(intent)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
+        }
+
+    }
+
+    fun requestOverlayPermission() {
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivityForResult(intent, 1001)
         }
     }
 

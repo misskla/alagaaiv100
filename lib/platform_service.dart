@@ -1,13 +1,13 @@
 import 'package:flutter/services.dart';
 
 class PlatformService {
-  static const platform = MethodChannel('alagaai/channel');
+  static const platform = MethodChannel('alagaai/overlay');
 
-  Future<void> startAccessibility() async {
+  Future<void> showOverlay() async {
     try {
-      await platform.invokeMethod('startService');
+      await platform.invokeMethod('showBubble');
     } on PlatformException catch (e) {
-      print("Error: ${e.message}");
+      print("Overlay error: ${e.message}");
     }
   }
 }
