@@ -6,6 +6,8 @@ import 'search_professionals_screen.dart';
 import 'chat_screen.dart';
 import 'profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'widgets/notification_card.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final UserInfo userInfo;
@@ -17,6 +19,31 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  Future<void> _markAllAsRead() async {
+    final snapshots = await FirebaseFirestore.instance
+        .collection('trigger_alerts')
+        .get();
+    for (var doc in snapshots.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  Future<int> getUnreadCount() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('trigger_alerts')
+        .get();
+    return snapshot.size;
+  }
+
+  String extractMessageOnly(String fullMessage) {
+    return fullMessage.split('\n\nAI:').first.trim();
+  }
+
+  String extractExplanation(String fullMessage) {
+    final parts = fullMessage.split('\n\nAI:');
+    return parts.length > 1 ? parts[1].trim() : "No explanation.";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +54,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -39,19 +65,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       color: const Color(0xFF5A3DA0),
                     ),
                   ),
-                  Text(
-                    "Mark all as read",
-                    style: GoogleFonts.kodchasan(
-                      fontSize: 14,
-                      color: Colors.blueAccent,
-                      decoration: TextDecoration.underline,
+                  GestureDetector(
+                    onTap: _markAllAsRead,
+                    child: Text(
+                      "Mark all as read",
+                      style: GoogleFonts.kodchasan(
+                        fontSize: 14,
+                        color: Colors.blueAccent,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-
-              // 🔥 Firestore alert notifications
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -62,64 +89,48 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
-
                     final docs = snapshot.data!.docs;
-
                     if (docs.isEmpty) {
                       return const Center(child: Text("No alerts yet."));
                     }
-
                     return ListView.builder(
                       itemCount: docs.length,
                       itemBuilder: (context, index) {
                         final data = docs[index].data() as Map<String, dynamic>;
-                        final message = data['message'] ?? '';
                         final timestamp = data['timestamp']?.toDate();
+                        return NotificationCard(
+                          senderName: widget.userInfo.name,
+                          date: timestamp != null
+                              ? "${timestamp.month}/${timestamp.day}/${timestamp.year}"
+                              : "Unknown date",
+                          time: timestamp != null
+                              ? "${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}"
+                              : "Unknown time",
+                          alertLevel: "High Level",
+                          aiExplanation: extractExplanation(data['message'] ?? '').length > 0
+                              ? "⚠️ Potentially risky message"
+                              : "✅ Safe message",
+                          message: extractMessageOnly(data['message'] ?? ''),
+                          userInfo: widget.userInfo,
+                          onChatbotPressed: () {
+                            final sms = extractMessageOnly(data['message'] ?? '');
+                            final ai = extractExplanation(data['message'] ?? '');
 
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(30),
-                                child: Image.asset(
-                                  'assets/nav_brain.png',
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(
+                                  title: "Chatbot",
+                                  imagePath: 'assets/nav_brain.png',
+                                  isAI: true,
+                                  userInfo: widget.userInfo,
+                                  initialMessage: "A potentially risky message was detected:\n\n\"$sms\"\n\nWould you like to talk about it?",
+
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      message,
-                                      style: GoogleFonts.kodchasan(fontSize: 14),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      timestamp != null
-                                          ? "Received at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}"
-                                          : "Time unknown",
-                                      style: GoogleFonts.kodchasan(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                            );
+                          },
+
                         );
                       },
                     );
@@ -189,9 +200,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   },
                   child: Image.asset('assets/nav_brain.png', width: 60, height: 60),
                 ),
-                GestureDetector(
-                  onTap: () {}, // current screen
-                  child: Image.asset('assets/nav_messages.png', width: 60, height: 60),
+                FutureBuilder<int>(
+                  future: getUnreadCount(),
+                  builder: (context, snapshot) {
+                    int count = snapshot.data ?? 0;
+                    return Stack(
+                      children: [
+                        Image.asset('assets/nav_messages.png', width: 60, height: 60),
+                        if (count > 0)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 GestureDetector(
                   onTap: () {

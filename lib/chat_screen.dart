@@ -7,12 +7,15 @@ import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'widgets/alert_bubble.dart';
 import 'gemini_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ChatScreen extends StatefulWidget {
   final bool isAI;
   final String title;
   final String imagePath;
   final UserInfo userInfo;
+  final String? initialMessage;
+
 
   const ChatScreen({
     super.key,
@@ -20,6 +23,7 @@ class ChatScreen extends StatefulWidget {
     required this.imagePath,
     required this.isAI,
     required this.userInfo,
+    this.initialMessage
   });
 
   @override
@@ -29,10 +33,31 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final GeminiService _geminiService = GeminiService();
+  late final bool isParent;
 
   final List<Map<String, String>> _messages = [
     {'role': 'bot', 'text': 'What can I help you with?'} // 👋 Initial bot message
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    isParent = widget.userInfo.role.toLowerCase() == 'parent';
+
+    // ✅ Show initial message once and get AI response
+    if (widget.initialMessage != null && widget.initialMessage!.trim().isNotEmpty) {
+      _messages.add({'role': 'user', 'text': widget.initialMessage!});
+
+      if (widget.isAI) {
+        _geminiService.sendMessage(widget.initialMessage!).then((reply) {
+          setState(() {
+            _messages.add({'role': 'bot', 'text': reply});
+          });
+        });
+      }
+    }
+  }
+
 
   void _sendMessage() async {
     final text = _controller.text.trim();
@@ -44,40 +69,112 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     if (widget.isAI) {
-      final reply = await _geminiService.sendMessage(text);
+      String userInput = text;
+
+      // ✅ Customized prompt based on user role
+      String customPrompt = isParent
+          ? "You are an AI assistant helping a concerned parent. Respond in a clear and informative way to help them understand or support their child. Question: $userInput"
+          : "You are a supportive AI talking to a child. Be caring, safe, and explain things simply. If it's a risky situation, give calm, clear advice. Question: $userInput";
+
+      final reply = await _geminiService.sendMessage(customPrompt);
+
       setState(() {
         _messages.add({'role': 'bot', 'text': reply});
       });
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FFFD),
-      body: Column(
+      body: Stack(
         children: [
-          _buildHeader(),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                if (msg['role'] == 'user') {
-                  return _buildUserMessage(msg['text']!, widget.userInfo.profileImage);
-                } else {
-                  return _buildBotMessage(msg['text']!);
-                }
-              },
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 80), // ⬅ padding to avoid being covered by the button
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = _messages[index];
+                    if (msg['role'] == 'user') {
+                      return _buildUserMessage(msg['text']!, widget.userInfo.profileImage);
+                    } else {
+                      return _buildBotMessage(msg['text']!);
+                    }
+                  },
+                ),
+              ),
+              _buildInputBar(),
+            ],
+          ),
+
+          // ⬇ Floating Therapist Button
+          Positioned(
+            bottom: 90, // just above input bar
+            left: 20,
+            right: 20,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(30),
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SearchProfessionalsScreen(userInfo: widget.userInfo),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFB6F92), Color(0xFF8E44AD)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 12,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.volunteer_activism, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Talk to a Therapist",
+                        style: GoogleFonts.kodchasan(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-          _buildInputBar(),
         ],
       ),
+
       bottomNavigationBar: _buildBottomNav(context),
     );
   }
+
+
 
   Widget _buildHeader() {
     return Container(
@@ -167,50 +264,80 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildUserMessage(String text, String profileImagePath) {
     return Align(
       alignment: Alignment.centerRight,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Flexible(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  text,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                  style: GoogleFonts.kodchasan(fontSize: 14),
+                ),
+              ),
             ),
-            child: Text(text, style: GoogleFonts.kodchasan(fontSize: 14)),
-          ),
-          const SizedBox(width: 5),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              profileImagePath,
-              width: 30,
-              height: 30,
-              fit: BoxFit.cover,
+            const SizedBox(width: 5),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                profileImagePath,
+                width: 30,
+                height: 30,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+
   Widget _buildBotMessage(String text) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF5A3DA0),
-          borderRadius: BorderRadius.circular(16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
-        child: Text(
-          text,
-          style: GoogleFonts.kodchasan(color: Colors.white, fontSize: 14),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF5A3DA0),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: MarkdownBody(
+            data: text,
+            styleSheet: MarkdownStyleSheet(
+              p: GoogleFonts.kodchasan(color: Colors.white, fontSize: 14),
+              strong: GoogleFonts.kodchasan(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
+
+
+
+
 
   Widget _buildBottomNav(BuildContext context) {
     return SafeArea(

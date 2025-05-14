@@ -1,3 +1,5 @@
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'models/user_info.dart';
@@ -189,87 +191,85 @@ class DashboardScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                GestureDetector(
-                  onTap: () {}, // Already on Home
-                  child: Image.asset(
-                    'assets/nav_home.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) =>
-                            SearchProfessionalsScreen(userInfo: userInfo),
+                _navIcon(context, 'assets/nav_home.png', () {}),
+                _navIcon(context, 'assets/nav_search.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SearchProfessionalsScreen(userInfo: userInfo),
+                    ),
+                  );
+                }),
+                _navIcon(context, 'assets/nav_brain.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        title: "Chatbot",
+                        imagePath: 'assets/nav_brain.png',
+                        isAI: true,
+                        userInfo: userInfo,
                       ),
+                    ),
+                  );
+                }),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('trigger_alerts').snapshots(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.docs.length ?? 0;
+                    return Stack(
+                      children: [
+                        _navIcon(context, 'assets/nav_messages.png', () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NotificationsScreen(userInfo: userInfo),
+                            ),
+                          );
+                        }),
+                        if (count > 0)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_search.png',
-                    width: 60,
-                    height: 60,
-                  ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => ChatScreen(
-                          title: "Chatbot",
-                          imagePath: 'assets/nav_brain.png',
-                          isAI: true,
-                          userInfo: userInfo,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_brain.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NotificationsScreen(userInfo: userInfo),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_messages.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProfileScreen(userInfo: userInfo),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_profile.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
+                _navIcon(context, 'assets/nav_profile.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(userInfo: userInfo),
+                    ),
+                  );
+                }),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _navIcon(BuildContext context, String asset, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Image.asset(asset, width: 60, height: 60),
     );
   }
 }

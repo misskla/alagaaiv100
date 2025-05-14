@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'models/user_info.dart';
@@ -6,6 +7,7 @@ import 'search_professionals_screen.dart';
 import 'chat_screen.dart';
 import 'notifications_screen.dart';
 import 'welcome_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatelessWidget {
   final UserInfo userInfo;
@@ -19,7 +21,6 @@ class ProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Top Banner with Overlapping Profile Image
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -56,7 +57,6 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 70),
-
             Text(
               userInfo.name.toUpperCase(),
               style: GoogleFonts.kodchasan(
@@ -73,21 +73,16 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildLabel("Address"),
-                  _buildValue(
-                    "73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental",
-                  ),
+                  _buildValue("73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental"),
                   const SizedBox(height: 16),
                   _buildLabel("Contact Details"),
-                  _buildValue(
-                    "73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental",
-                  ),
+                  _buildValue("73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental"),
                   const SizedBox(height: 16),
                   if (userInfo.role == 'Parent') ...[
                     _buildLabel("CHILDREN"),
@@ -97,30 +92,16 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 30),
-
             ElevatedButton(
-              onPressed: () {
-                // TODO: Add Edit Profile logic
-              },
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFC94D),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
-              child: Text(
-                "Edit Profile",
-                style: GoogleFonts.kodchasan(
-                  fontSize: 16,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Text("Edit Profile",
+                style: GoogleFonts.kodchasan(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 10),
@@ -134,21 +115,11 @@ class ProfileScreen extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF7EA2),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
-              child: Text(
-                "Log Out",
-                style: GoogleFonts.kodchasan(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Text("Log Out",
+                style: GoogleFonts.kodchasan(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 40),
@@ -180,41 +151,26 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => DashboardScreen(userInfo: userInfo),
-                      ),
+                      MaterialPageRoute(builder: (_) => DashboardScreen(userInfo: userInfo)),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_home.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_home.png', width: 60, height: 60),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => SearchProfessionalsScreen(userInfo: userInfo)),
+                    );
+                  },
+                  child: Image.asset('assets/nav_search.png', width: 60, height: 60),
                 ),
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) =>
-                            SearchProfessionalsScreen(userInfo: userInfo),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_search.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => ChatScreen(
+                        builder: (_) => ChatScreen(
                           title: "Chatbot",
                           imagePath: 'assets/nav_brain.png',
                           isAI: true,
@@ -223,34 +179,20 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_brain.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_brain.png', width: 60, height: 60),
                 ),
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => NotificationsScreen(userInfo: userInfo),
-                      ),
+                      MaterialPageRoute(builder: (_) => NotificationsScreen(userInfo: userInfo)),
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_messages.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  child: Image.asset('assets/nav_messages.png', width: 60, height: 60),
                 ),
                 GestureDetector(
-                  onTap: () {}, // current screen
-                  child: Image.asset(
-                    'assets/nav_profile.png',
-                    width: 60,
-                    height: 60,
-                  ),
+                  onTap: () {},
+                  child: Image.asset('assets/nav_profile.png', width: 60, height: 60),
                 ),
               ],
             ),
@@ -261,8 +203,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildLabel(String label) {
-    return Text(
-      label,
+    return Text(label,
       style: GoogleFonts.kodchasan(
         fontSize: 14,
         fontWeight: FontWeight.w600,
@@ -272,12 +213,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildValue(String value) {
-    return Text(
-      value,
-      style: GoogleFonts.kodchasan(
-        fontSize: 13,
-        color: const Color(0xFFFF7EA2),
-      ),
+    return Text(value,
+      style: GoogleFonts.kodchasan(fontSize: 13, color: const Color(0xFFFF7EA2)),
     );
   }
 }

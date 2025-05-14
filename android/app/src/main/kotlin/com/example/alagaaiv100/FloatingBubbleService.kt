@@ -1,4 +1,4 @@
-package com.example.alagaaiv100
+/*package com.example.alagaaiv100
 
 import android.app.Service
 import android.content.Intent
@@ -9,6 +9,8 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import android.view.MotionEvent
+
 
 class FloatingBubbleService : Service() {
 
@@ -40,12 +42,32 @@ class FloatingBubbleService : Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager.addView(bubbleView, params)
 
-        // Optional: Handle dragging or click events
-        bubbleView.setOnTouchListener { _, _ ->
-            // Add dragging logic here if needed
-            false
+        // 🟢 INSERTED: Dragging logic
+        var initialX = 0
+        var initialY = 0
+        var initialTouchX = 0f
+        var initialTouchY = 0f
+
+        bubbleView.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x
+                    initialY = params.y
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    params.x = initialX + (event.rawX - initialTouchX).toInt()
+                    params.y = initialY + (event.rawY - initialTouchY).toInt()
+                    windowManager.updateViewLayout(bubbleView, params)
+                    true
+                }
+                else -> false
+            }
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -56,3 +78,4 @@ class FloatingBubbleService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 }
+*/

@@ -5,23 +5,29 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "alagaaiv100/channel"
+    private val METHOD_CHANNEL = "alagaaiv100/channel"
     private val SMS_EVENT_CHANNEL = "alagaaiv100/sms_event"
+    private val BUBBLE_CHANNEL = "bubble_channel"
+    private var smsReceiver: BroadcastReceiver? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        // MethodChannel setup
-        val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        requestOverlayPermissionIfNeeded()
+
+        // MethodChannel 1: General (e.g. accessibility, bubble)
+        val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL)
         Companion.methodChannel = methodChannel
 
         methodChannel.setMethodCallHandler { call, result ->
@@ -31,40 +37,58 @@ class MainActivity : FlutterActivity() {
                     startService(intent)
                     result.success(null)
                 }
-                "showBubble" -> {
-                    val intent = Intent(this, FloatingBubbleService::class.java)
-                    startService(intent)
+                /*"showBubble" -> {
+                    //val intent = Intent(this, FloatingBubbleService::class.java)
+                    //startService(intent)
                     result.success(null)
-                }
+                }*/
                 else -> result.notImplemented()
             }
         }
 
-        // EventChannel for SMSReceiver
-        val eventChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_EVENT_CHANNEL)
-        eventChannel.setStreamHandler(object : EventChannel.StreamHandler {
-            private var receiver: BroadcastReceiver? = null
+        // MethodChannel 2: Start bubble from Dart via "bubble_channel"
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BUBBLE_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "startBubble") {
+                    //val intent = Intent(this, FloatingBubbleService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                    result.success("Bubble Started")
+                } else {
+                    result.notImplemented()
+                }
+            }
 
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                receiver = object : BroadcastReceiver() {
-                    override fun onReceive(context: Context?, intent: Intent?) {
-                        val message = intent?.getStringExtra("message") ?: return
-                        events?.success(message)
+        // EventChannel: Forward SMS to Flutter from BroadcastReceiver
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_EVENT_CHANNEL)
+            .setStreamHandler(object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    smsReceiver = object : BroadcastReceiver() {
+                        override fun onReceive(context: Context?, intent: Intent?) {
+                            val message = intent?.getStringExtra("message")
+                            Log.d("MainActivity", "🛎 Forwarding to Flutter: $message")
+                            if (message != null) {
+                                events?.success(message)
+                            }
+                        }
+                    }
+
+                    LocalBroadcastManager.getInstance(this@MainActivity)
+                        .registerReceiver(smsReceiver!!, IntentFilter("SMS_MONITOR_EVENT"))
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    smsReceiver?.let {
+                        LocalBroadcastManager.getInstance(this@MainActivity).unregisterReceiver(it)
                     }
                 }
-
-                LocalBroadcastManager.getInstance(applicationContext)
-                    .registerReceiver(receiver!!, IntentFilter("SMS_MONITOR_EVENT"))
-            }
-
-            override fun onCancel(arguments: Any?) {
-                receiver?.let {
-                    LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(it)
-                }
-            }
-        })
+            })
     }
 
+    // Request overlay permission
     fun requestOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
@@ -83,4 +107,14 @@ class MainActivity : FlutterActivity() {
             methodChannel?.invokeMethod(method, arguments)
         }
     }
+    private fun requestOverlayPermissionIfNeeded() {
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
+    }
+
 }

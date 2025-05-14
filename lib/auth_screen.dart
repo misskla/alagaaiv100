@@ -154,7 +154,9 @@ class _AuthScreenState extends State<AuthScreen> {
         String message = 'Authentication failed';
         switch (e.code) {
           case 'email-already-in-use':
-            message = 'This email is already in use';
+            message = _isSignUp && widget.role == "Child"
+                ? 'This email is already registered. Please use a different email for the child.'
+                : 'This email is already in use';
             break;
           case 'user-not-found':
             message = 'No user found with this email';
