@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'welcome_screen.dart';
 
@@ -8,53 +9,32 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<int> _dotIndex;
-
+class _SplashScreenState extends State<SplashScreen> {
   final int dotCount = 6;
+  int activeDotIndex = 0;
+  Timer? _dotTimer;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-
-    _dotIndex = StepTween(
-      begin: 0,
-      end: dotCount - 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
-
-    // Start the first animation loop
-    _controller.forward();
-
-    // Repeat manually to ensure the last dot is visible
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _controller.forward(from: 0);
-      }
+    // Start dot animation loop manually
+    _dotTimer = Timer.periodic(const Duration(milliseconds: 350), (timer) {
+      setState(() {
+        activeDotIndex = (activeDotIndex + 1) % dotCount;
+      });
     });
 
-    // After 10 seconds, stop animation and transition
-    Future.delayed(const Duration(seconds: 10), () {
-      _controller.stop();
+    // After 8.5 seconds, stop animation and go to welcome screen
+    Future.delayed(const Duration(milliseconds: 8500), () {
+      _dotTimer?.cancel();
       if (context.mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 800),
-            pageBuilder:
-                (context, animation, secondaryAnimation) =>
+            pageBuilder: (context, animation, secondaryAnimation) =>
             const WelcomeScreen(),
-            transitionsBuilder: (
-                context,
-                animation,
-                secondaryAnimation,
-                child,
-                ) {
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
           ),
@@ -65,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _dotTimer?.cancel();
     super.dispose();
   }
 
@@ -96,17 +76,12 @@ class _SplashScreenState extends State<SplashScreen>
           children: [
             Image.asset('assets/final logo.png', width: 200, height: 200),
             const SizedBox(height: 0),
-            AnimatedBuilder(
-              animation: _dotIndex,
-              builder: (context, child) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    dotCount,
-                        (index) => buildDot(index, _dotIndex.value),
-                  ),
-                );
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                dotCount,
+                    (index) => buildDot(index, activeDotIndex),
+              ),
             ),
           ],
         ),

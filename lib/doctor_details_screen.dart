@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'models/user_info.dart';
@@ -17,124 +18,160 @@ class DoctorDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FFFD),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: ListView(
             children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 200,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFBDA9F6),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 20),
-                        Image.asset(
-                          'assets/final logo.png',
-                          width: 100,
-                          height: 100,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -75,
-                    left: MediaQuery.of(context).size.width / 2 - 60,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/doctor_profile.png',
-                        width: 120,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ],
+              Center(
+                child: Image.asset(
+                  'assets/final logo.png',
+                  width: 110,
+                  height: 110,
+                ),
               ),
-              const SizedBox(height: 90),
-
+              const SizedBox(height: 20),
+              RichText(
+                textAlign: TextAlign.left,
+                text: TextSpan(
+                  style: GoogleFonts.kodchasan(
+                    fontSize: 22,
+                    color: const Color(0xFF5A3DA0),
+                  ),
+                  children: [
+                    const TextSpan(text: "Hello there, "),
+                    TextSpan(
+                      text: "${userInfo.name}!",
+                      style: const TextStyle(color: Color(0xFFFF7EA2)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 25),
               Text(
-                "DR. JOSEPHINE REYES",
+                "Active Courses",
                 style: GoogleFonts.kodchasan(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: const Color(0xFF5A3DA0),
                 ),
               ),
-              Text(
-                "Clinical Psychologist",
-                style: GoogleFonts.kodchasan(
-                  fontSize: 14,
-                  color: const Color(0xFF5A3DA0),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFC94D),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ),
-              const SizedBox(height: 30),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel("Address"),
-                    _buildValue(
-                      "73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental",
+                    Row(
+                      children: [
+                        Image.asset('assets/lock.png', width: 40),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "Early Signs of Grooming",
+                            style: GoogleFonts.kodchasan(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF5A3DA0),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    _buildLabel("Contact Details"),
-                    _buildValue(
-                      "73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental",
+                    const SizedBox(height: 10),
+                    Stack(
+                      children: [
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        Container(
+                          height: 8,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF7EA2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    _buildLabel("Certifications"),
-                    _buildValue(
-                      "Mental Health Counseling, Licensed Psychologist",
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Feature coming soon!'),
+                            duration: Duration(seconds: 3),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.deepPurpleAccent,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF7EA2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                      ),
+                      child: Text(
+                        "Continue Learning",
+                        style: GoogleFonts.kodchasan(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 30),
-
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => ChatScreen(
-                        title: "Dr. Josephine Reyes",
-                        imagePath: 'assets/doctor_profile.png',
-                        isAI: false,
-                        userInfo: userInfo,
+              Text(
+                "Feed",
+                style: GoogleFonts.kodchasan(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF5A3DA0),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF7EA2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset('assets/feed.png'),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "'It's Showtime': What is considered as grooming. Vice Ganda explains",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.kodchasan(
+                        fontSize: 12,
+                        color: Colors.white,
                       ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFC94D),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: Text(
-                  "Consult Now",
-                  style: GoogleFonts.kodchasan(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Published April 29, 2024",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.kodchasan(
+                        fontSize: 10,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 40),
@@ -163,94 +200,85 @@ class DoctorDetailsScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DashboardScreen(userInfo: userInfo),
+                _navIcon(context, 'assets/nav_home.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => DashboardScreen(userInfo: userInfo)),
+                  );
+                }),
+                _navIcon(context, 'assets/nav_search.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => SearchProfessionalsScreen(userInfo: userInfo)),
+                  );
+                }),
+                _navIcon(context, 'assets/nav_brain.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        title: "Chatbot",
+                        imagePath: 'assets/nav_brain.png',
+                        isAI: true,
+                        userInfo: userInfo,
                       ),
+                    ),
+                  );
+                }),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('trigger_alerts').snapshots(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.docs.length ?? 0;
+                    return Stack(
+                      children: [
+                        _navIcon(context, 'assets/nav_messages.png', () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => NotificationsScreen(userInfo: userInfo)),
+                          );
+                        }),
+                        if (count > 0)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
-                  child: Image.asset(
-                    'assets/nav_home.png',
-                    width: 60,
-                    height: 60,
-                  ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) =>
-                            SearchProfessionalsScreen(userInfo: userInfo),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_search.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => ChatScreen(
-                          title: "Chatbot",
-                          imagePath: 'assets/nav_brain.png',
-                          isAI: true,
-                          userInfo: userInfo,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_brain.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NotificationsScreen(userInfo: userInfo),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_messages.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProfileScreen(userInfo: userInfo),
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/nav_profile.png',
-                    width: 60,
-                    height: 60,
-                  ),
-                ),
+                _navIcon(context, 'assets/nav_profile.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => ProfileScreen(userInfo: userInfo)),
+                  );
+                }),
               ],
             ),
           ),
         ),
       ),
+
+    );
+  }
+
+  Widget _navIcon(BuildContext context, String assetPath, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Image.asset(assetPath, width: 60, height: 60),
     );
   }
 

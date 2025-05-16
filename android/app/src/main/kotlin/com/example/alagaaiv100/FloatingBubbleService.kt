@@ -1,15 +1,23 @@
-/*package com.example.alagaaiv100
+package com.example.alagaaiv100
 
 import android.app.Service
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.view.MotionEvent
+import android.widget.LinearLayout
+import androidx.core.app.NotificationCompat
+import com.example.alagaaiv100.R
+
+
 
 
 class FloatingBubbleService : Service() {
@@ -17,57 +25,79 @@ class FloatingBubbleService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var bubbleView: View
 
-    override fun onCreate() {
-        super.onCreate()
 
-        // Inflate the custom bubble layout
-        bubbleView = LayoutInflater.from(this).inflate(R.layout.bubble_layout, null)
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("FloatingBubbleService", "🔔 onStartCommand entered")
 
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-        )
+        startForegroundNotification()
+        Log.d("FloatingBubbleService", "✅ Foreground notification started")
 
-        params.gravity = Gravity.TOP or Gravity.START
-        params.x = 100
-        params.y = 300
+        try {
+            bubbleView = LayoutInflater.from(this).inflate(R.layout.bubble_layout, null)
+            Log.d("FloatingBubbleService", "✅ bubble layout inflated")
 
-        // Set up the floating window
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        windowManager.addView(bubbleView, params)
-
-        // 🟢 INSERTED: Dragging logic
-        var initialX = 0
-        var initialY = 0
-        var initialTouchX = 0f
-        var initialTouchY = 0f
-
-        bubbleView.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x
-                    initialY = params.y
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
-                    true
+            val bubbleCard = bubbleView.findViewById<LinearLayout>(R.id.bubble_card)
+            bubbleCard.setOnClickListener {
+                val launchIntent = Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    putExtra("fromBubble", true)
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    params.x = initialX + (event.rawX - initialTouchX).toInt()
-                    params.y = initialY + (event.rawY - initialTouchY).toInt()
-                    windowManager.updateViewLayout(bubbleView, params)
-                    true
-                }
-                else -> false
+                Log.d("FloatingBubbleService", "🚀 Launching MainActivity from bubble")
+                startActivity(launchIntent)
+                stopSelf()
             }
+
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                else
+                    WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            )
+
+            params.gravity = Gravity.TOP or Gravity.END
+            params.x = 24
+            params.y = 100
+
+            windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            windowManager.addView(bubbleView, params)
+            Log.d("FloatingBubbleService", "🟢 Bubble added to screen")
+        } catch (e: Exception) {
+            Log.e("FloatingBubbleService", "❌ Error in bubble overlay: ${e.message}")
         }
+
+        return START_NOT_STICKY
     }
 
+
+
+    // ✅ Foreground notification to keep service alive
+    private fun startForegroundNotification() {
+        val channelId = "bubble_service_channel"
+        val channelName = "Bubble Overlay Service"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                channelName,
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification: Notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Alaga AI is monitoring")
+            .setContentText("Tap the bubble to talk.")
+            .setSmallIcon(R.mipmap.ic_launcher) // You can customize this
+            .setOngoing(true)
+            .build()
+
+        startForeground(1, notification)
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -78,4 +108,3 @@ class FloatingBubbleService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 }
-*/

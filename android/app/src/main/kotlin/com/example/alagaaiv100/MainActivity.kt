@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -26,7 +25,16 @@ class MainActivity : FlutterActivity() {
 
         requestOverlayPermissionIfNeeded()
 
-        // MethodChannel 1: General (e.g. accessibility, bubble)
+
+        val fromBubble = intent.getBooleanExtra("fromBubble", false)
+        if (fromBubble) {
+            MethodChannel(
+                flutterEngine.dartExecutor.binaryMessenger,
+                "alagaaiv100/bubble_redirect"
+            ).invokeMethod("openChatFromBubble", null)
+        }
+
+        // MethodChannel: General
         val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL)
         Companion.methodChannel = methodChannel
 
@@ -37,32 +45,24 @@ class MainActivity : FlutterActivity() {
                     startService(intent)
                     result.success(null)
                 }
-                /*"showBubble" -> {
-                    //val intent = Intent(this, FloatingBubbleService::class.java)
-                    //startService(intent)
-                    result.success(null)
-                }*/
+                "startBubble" -> {
+                    startBubbleOverlay(result, call.argument("trigger_message"))
+                }
                 else -> result.notImplemented()
             }
         }
 
-        // MethodChannel 2: Start bubble from Dart via "bubble_channel"
+        // MethodChannel: From Dart bubble overlay call
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BUBBLE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 if (call.method == "startBubble") {
-                    //val intent = Intent(this, FloatingBubbleService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intent)
-                    } else {
-                        startService(intent)
-                    }
-                    result.success("Bubble Started")
+                    startBubbleOverlay(result, call.argument("trigger_message"))
                 } else {
                     result.notImplemented()
                 }
             }
 
-        // EventChannel: Forward SMS to Flutter from BroadcastReceiver
+        // EventChannel: Broadcast SMS -> Dart
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -82,20 +82,46 @@ class MainActivity : FlutterActivity() {
 
                 override fun onCancel(arguments: Any?) {
                     smsReceiver?.let {
-                        LocalBroadcastManager.getInstance(this@MainActivity).unregisterReceiver(it)
+                        LocalBroadcastManager.getInstance(this@MainActivity)
+                            .unregisterReceiver(it)
                     }
                 }
             })
     }
 
-    // Request overlay permission
-    fun requestOverlayPermission() {
+    // ✅ Fixed onNewIntent signature and removed extra bracket
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        val fromBubble = intent.getBooleanExtra("fromBubble", false)
+        if (fromBubble) {
+            MethodChannel(
+                flutterEngine?.dartExecutor?.binaryMessenger!!,
+                "alagaaiv100/bubble_redirect"
+            ).invokeMethod("openChatFromBubble", null)  // Change this method name if needed
+        }
+    }
+
+    private fun startBubbleOverlay(result: MethodChannel.Result, message: String?) {
+        val intent = Intent(this, FloatingBubbleService::class.java)
+        intent.putExtra("trigger_message", message ?: "Triggered from Dart")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+
+        result.success("Bubble Started")
+    }
+
+    private fun requestOverlayPermissionIfNeeded() {
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:$packageName")
             )
-            startActivityForResult(intent, 1001)
+            startActivity(intent)
         }
     }
 
@@ -107,14 +133,4 @@ class MainActivity : FlutterActivity() {
             methodChannel?.invokeMethod(method, arguments)
         }
     }
-    private fun requestOverlayPermissionIfNeeded() {
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
-        }
-    }
-
 }

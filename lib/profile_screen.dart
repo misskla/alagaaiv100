@@ -21,6 +21,7 @@ class ProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Top Banner with Overlapping Profile Image
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -57,6 +58,7 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 70),
+
             Text(
               userInfo.name.toUpperCase(),
               style: GoogleFonts.kodchasan(
@@ -73,16 +75,21 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildLabel("Address"),
-                  _buildValue("73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental"),
+                  _buildValue(
+                    "73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental",
+                  ),
                   const SizedBox(height: 16),
                   _buildLabel("Contact Details"),
-                  _buildValue("73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental"),
+                  _buildValue(
+                    "73 Corrales Ave, Cagayan de Oro,\n9000 Misamis Oriental",
+                  ),
                   const SizedBox(height: 16),
                   if (userInfo.role == 'Parent') ...[
                     _buildLabel("CHILDREN"),
@@ -92,16 +99,37 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 30),
+
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Edit Profile is not available yet.'),
+                    duration: Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.deepPurpleAccent,
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFC94D),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
               ),
-              child: Text("Edit Profile",
-                style: GoogleFonts.kodchasan(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
+              child: Text(
+                "Edit Profile",
+                style: GoogleFonts.kodchasan(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -115,11 +143,21 @@ class ProfileScreen extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF7EA2),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
               ),
-              child: Text("Log Out",
-                style: GoogleFonts.kodchasan(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+              child: Text(
+                "Log Out",
+                style: GoogleFonts.kodchasan(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 40),
@@ -147,58 +185,82 @@ class ProfileScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => DashboardScreen(userInfo: userInfo)),
-                    );
-                  },
-                  child: Image.asset('assets/nav_home.png', width: 60, height: 60),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => SearchProfessionalsScreen(userInfo: userInfo)),
-                    );
-                  },
-                  child: Image.asset('assets/nav_search.png', width: 60, height: 60),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          title: "Chatbot",
-                          imagePath: 'assets/nav_brain.png',
-                          isAI: true,
-                          userInfo: userInfo,
-                        ),
+                _navIcon(context, 'assets/nav_home.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => DashboardScreen(userInfo: userInfo)),
+                  );
+                }),
+                _navIcon(context, 'assets/nav_search.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => SearchProfessionalsScreen(userInfo: userInfo)),
+                  );
+                }),
+                _navIcon(context, 'assets/nav_brain.png', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        title: "Chatbot",
+                        imagePath: 'assets/nav_brain.png',
+                        isAI: true,
+                        userInfo: userInfo,
                       ),
+                    ),
+                  );
+                }),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('trigger_alerts').snapshots(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.docs.length ?? 0;
+                    return Stack(
+                      children: [
+                        _navIcon(context, 'assets/nav_messages.png', () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => NotificationsScreen(userInfo: userInfo)),
+                          );
+                        }),
+                        if (count > 0)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
-                  child: Image.asset('assets/nav_brain.png', width: 60, height: 60),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => NotificationsScreen(userInfo: userInfo)),
-                    );
-                  },
-                  child: Image.asset('assets/nav_messages.png', width: 60, height: 60),
-                ),
-                GestureDetector(
-                  onTap: () {},
-                  child: Image.asset('assets/nav_profile.png', width: 60, height: 60),
-                ),
+                _navIcon(context, 'assets/nav_profile.png', () {
+                  // You can add navigation to ProfileScreen here if needed
+                }),
               ],
             ),
           ),
         ),
       ),
+
+    );
+  }
+
+  Widget _navIcon(BuildContext context, String assetPath, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Image.asset(assetPath, width: 60, height: 60),
     );
   }
 

@@ -1,3 +1,5 @@
+val kotlin_version = "1.8.22"
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")

@@ -7,6 +7,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'gemini_service.dart';
+import 'chat_screen.dart';
+import 'models/user_info.dart';
 
 Future<void> saveToLocal(String message) async {
   final prefs = await SharedPreferences.getInstance();
@@ -28,6 +30,7 @@ void main() async {
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -40,6 +43,7 @@ Future<void> storeTriggerAlert(String message) async {
 }
 
 class _MyAppState extends State<MyApp> {
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   final gemini = GeminiService();
   static const EventChannel _smsEventChannel = EventChannel("alagaaiv100/sms_event");
 
@@ -49,6 +53,8 @@ class _MyAppState extends State<MyApp> {
   String _latestSms = "No SMS received yet.";
   String _triggeredMessage = "";
   bool _showOverlay = false;
+
+
 
   /*void startFloatingBubble() async {
     const platform = MethodChannel('bubble_channel');
@@ -101,39 +107,77 @@ class _MyAppState extends State<MyApp> {
         }
       }
     });
+    const MethodChannel('alagaaiv100/bubble_redirect')
+        .setMethodCallHandler((call) async {
+      if (call.method == 'openChatFromBubble') {
+        try {
+          // Get current user ID (you may store this in SharedPreferences or use Firebase Auth)
+          final prefs = await SharedPreferences.getInstance();
+          final userId = prefs.getString('user_id');
 
-    // 🧪 Manual Gemini Test (runs on startup)
-    Future.delayed(Duration(seconds: 3), () async {
-      final testMessage = "Don't tell anyone. Can you meet me later?";
-      print("🧪 Sending test message to Gemini...");
+          if (userId != null) {
+            // Fetch user data from Firestore
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .get();
 
-      try {
-        final (isRisky, explanation) = await gemini.analyzeMessageWithExplanation(testMessage);
+            if (userDoc.exists) {
+              final userData = userDoc.data()!;
 
-        if (isRisky) {
-          print("🧪 Gemini flagged test message: $explanation");
+              // Create UserInfo from Firestore data
+              final userInfo = UserInfo(
+                name: userData['name'] ?? 'User',
+                profileImage: 'assets/nav_profile.png', // Use default image or a profile pic URL from Firestore
+                role: userData['role'] ?? 'Child',
+              );
 
-          setState(() {
-            _triggeredMessage = "⚠️ Trigger Alert: Potentially risky message detected.";
-            _showOverlay = true;
-          });
-
-          await storeTriggerAlert("$testMessage\n\nAI: $explanation");
-          await saveToLocal("$testMessage\n\nAI: $explanation");
-          await _sendNotification(testMessage, explanation);
-
-          Future.delayed(const Duration(seconds: 10), () {
-            if (mounted) setState(() => _showOverlay = false);
-          });
-        } else {
-          print("🧪 Gemini says test message is safe: $explanation");
+              // Navigate to chat screen with user data
+              navigatorKey.currentState?.pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    title: 'AI Assistant',
+                    imagePath: 'assets/nav_brain.png',
+                    isAI: true,
+                    userInfo: userInfo,
+                  ),
+                ),
+                    (route) => false,
+              );
+            } else {
+              // If user doesn't exist in Firestore, use default values
+              _navigateWithDefaultUser();
+            }
+          } else {
+            // If no user ID stored, use default values
+            _navigateWithDefaultUser();
+          }
+        } catch (e) {
+          print("Error fetching user data: $e");
+          // Fallback to default if there's an error
+          _navigateWithDefaultUser();
         }
-      } catch (e) {
-        print("❌ Gemini test failed: $e");
       }
     });
-
   }
+  void _navigateWithDefaultUser() {
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          title: 'AI Assistant',
+          imagePath: 'assets/nav_brain.png',
+          isAI: true,
+          userInfo: UserInfo(
+            name: 'User',
+            profileImage: 'assets/nav_profile.png',
+            role: 'Child',
+          ),
+        ),
+      ),
+          (route) => false,
+    );
+  }
+
 
 
   Future<void> _sendNotification(String message, String explanation) async {
@@ -158,6 +202,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       home: Stack(
         children: [

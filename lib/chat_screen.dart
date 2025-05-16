@@ -189,6 +189,15 @@ class _ChatScreenState extends State<ChatScreen> {
               width: 50,
               height: 50,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                // This will show a fallback when the image fails to load
+                return Container(
+                  width: 50,
+                  height: 50,
+                  color: Colors.purple.shade200,
+                  child: const Icon(Icons.person, color: Colors.white, size: 30),
+                );
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -297,6 +306,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 width: 30,
                 height: 30,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback for profile image
+                  return Container(
+                    width: 30,
+                    height: 30,
+                    color: Colors.grey.shade400,
+                    child: const Icon(Icons.person, color: Colors.white, size: 16),
+                  );
+                },
               ),
             ),
           ],
